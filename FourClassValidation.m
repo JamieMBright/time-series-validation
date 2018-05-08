@@ -85,7 +85,7 @@ O = reshape(O,[numel(O),1]);
 P = reshape(P,[numel(P),1]);
 
 % removal of NaN values
-not_nan_inds = (~isnan(O) && ~isnan(P));
+not_nan_inds = (~isnan(O) & ~isnan(P));
 O = O(not_nan_inds);
 P = P(not_nan_inds);
 
