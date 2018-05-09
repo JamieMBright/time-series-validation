@@ -257,8 +257,7 @@ for i = 1:size(Predictions,2)
         %-------------------------------------------------------------------------
         % C.1 Kolmogorov-Smirnov test Integral (KSI)
         % irradiance must be binned into x by intervals of n
-        n = 100;
-        xbins = (0:n:1500);
+        xbins = linspace(nanmin(O),nanmax(O),15);
         xmin = min(xbins);
         xmax = max(xbins);
         Od = histc(O,xbins)./N;
