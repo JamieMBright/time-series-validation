@@ -60,7 +60,7 @@
 %                               EXAMPLES
 % -----------------------------------------------------------------------
 % sites = 1;
-% time = (-4*pi():0.001:4*pi())'; 
+% time = (-4*pi():0.001:4*pi())';
 % % all observations are the same for each site.
 % Observations = 1000.*sin(time);
 % Observations = repmat(Observations,[1,sites]);
@@ -72,9 +72,9 @@
 % % remove negative values and then the obs look sort of like irradiance
 % Predictions(Predictions<0)=NaN;
 % Observations(Observations<0)=NaN;
-% 
+%
 % % validate using the four class system
-% validation_struct = FourClassValidation(Observations,Predictions,{'A','B'});
+% validation_struct = FourClassValidation(Observations,Predictions,{'A','B','C'});
 
 
 function validation_struct = FourClassValidation(Observations,Predictions,class_selection)
@@ -93,9 +93,9 @@ if size(Observations)~=size(Predictions)
 end
 permissible_classes = {'A','B','C','D'};
 for i = 1:length(class_selection)
-   if max(strcmp(permissible_classes,class_selection{i}))==0
-      error(['User defined class ''',class_selection{i},''' is not a valid class'])
-   end
+    if max(strcmp(permissible_classes,class_selection{i}))==0
+        error(['User defined class ''',class_selection{i},''' is not a valid class'])
+    end
 end
 
 % pre-allocate memory for output
@@ -140,7 +140,7 @@ for i = 1:size(Predictions,2)
     P = P(not_nan_inds);
     
     % define common usages
-    Om = mean(O);SE 
+    Om = mean(O);
     Pm = mean(P);
     N = length(O);
     
@@ -160,10 +160,10 @@ for i = 1:size(Predictions,2)
     
     if max(strcmpi(class_selection,'A')==1)
         
-         if i == 327
-             pause(0.1)
-         end
-             
+        if i == 327
+            pause(0.1)
+        end
+        
         %-------------------------------------------------------------------------
         % A.1  Mean bias difference (MBD)
         %     validation_struct.MBD = 100./Om .* sum(P-O); % Gueymard's version
@@ -250,27 +250,32 @@ for i = 1:size(Predictions,2)
         xbins = (0:n:1500);
         xmin = min(xbins);
         xmax = max(xbins);
-        Od = histc(O,xbins);
-        Pd = histc(P,xbins);
+        Od = histc(O,xbins)./N;
+        Pd = histc(P,xbins)./N;
         % absolute difference between the two normalised distributions
         Dn = abs(Od - Pd);
-        % pure function of N obtained from [3], though simplified to constant \approx 1.63.
-        Dc = 1.63;
+        % pure function of N obtained from [3], though simplified to constant phi(N) \approx 1.63.
+        Dc = 1.63/N^0.5;
         Ac = Dc .* (xmax - xmin);
-        fun = @(x) Dn(x);
-        validation_struct.KSI(1,i) = 100/Ac .* integral(fun,xmin,xmax);
+        fun1 = @(x) interp1(xbins,Dn,x);
+        validation_struct.KSI(1,i) = 100/Ac .* integral(fun1,xmin,xmax);
         % KSI is 0 if the two distributions being compared can be considered
         % identical in a statistical sense.
+        
         %-------------------------------------------------------------------------
         % C.2 Relative frequency of exeedence situations (OVER)
-        % when the normalised distribution of modelled data points in specific
-        % bins exceeds the critical limit that would make it statistically
+        % The OVER test is the same as the KSI test, but only for those
+        % bins that exceed the limit defined by Dc. This is useful when the
+        % normalised distribution of modelled data points in specific bins
+        % exceeds the critical limit that would make it statistically
         % undistinguisable from the reference distribution.
-        fun = @(x) max([Dn(x)-Dc,0]);
-        validation_struct.OVER(1,i) = 100/Ac .* integral(fun,xmin,xmax);
+        Dnc = Dn;
+        Dnc(Dnc<Dc) = 0;
+        fun2 = @(x) interp1(xbins,Dnc,x);
+        validation_struct.OVER(1,i) = 100/Ac .* integral(fun2,xmin,xmax);
         % OVER is 0 if the normalised distribution always remains below Dc.
-        % OVER can be null indicating that the distribution of the  predictions
-        % generally respect those of the predictions.
+        % OVER can be null indicating that the distribution of the
+        % predictions generally respect those of the predictions.
         
         %-------------------------------------------------------------------------
         % C.3 Combined Performance Index (CPI)
@@ -290,29 +295,30 @@ for i = 1:size(Predictions,2)
         end
         % all values must be in percentages.
         validation_struct.CPI(1,i) = (validation_struct.KSI(1,i) + validation_struct.OVER(1,i) + 2.*validation_struct.RMSD(1,i))./4;
+        
         %-------------------------------------------------------------------------
     end
     
 end
 
-    %% Class D
-    % This category is completely different from the three previous ones
-    % because the goal here is to obtain a visualization rather than summary
-    % statistics in the form of a few numbers
-    if max(strcmpi(class_selection,'D')==1)
-        % The first recommended plots for class D is a Taylor diagram detailed
-        % by KE Taylor [4] that combines RMSD, SD and R2 into a single polar
-        % diagram. It is ideal for comparing the performance of many different
-        % models.
-        
-        % The second suggestion is a Mutual Information Diagram, which is a
-        % revision of the Taylor diagram proposed by [5].
-        
-        % The box plot is another decent variation for demonstrating
-        % performance at different sites.
-        
-        
-    end
+%% Class D
+% This category is completely different from the three previous ones
+% because the goal here is to obtain a visualization rather than summary
+% statistics in the form of a few numbers
+if max(strcmpi(class_selection,'D')==1)
+    % The first recommended plots for class D is a Taylor diagram detailed
+    % by KE Taylor [4] that combines RMSD, SD and R2 into a single polar
+    % diagram. It is ideal for comparing the performance of many different
+    % models.
+    
+    % The second suggestion is a Mutual Information Diagram, which is a
+    % revision of the Taylor diagram proposed by [5].
+    
+    % The box plot is another decent variation for demonstrating
+    % performance at different sites.
+    
+    
+end
 
 end
 
