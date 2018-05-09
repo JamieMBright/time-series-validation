@@ -1,4 +1,4 @@
-% This is a function that takes two corresponding time series and perofmrs
+% This is a function that takes corresponding time series and performs
 % an intense validation following the proceedure described by Chris A.
 % Gueymard in his 2014 paper:
 %
@@ -53,13 +53,13 @@
 % -----------------------------------------------------------------------
 % The output is a struct containing the results, depending on the selected
 % class_selection. Within each struct contains the respective results.
-% For example, validation_struct.MBD contains the mean bias difference of the
-% validation.
+% For example, validation_struct.MBD contains the mean bias difference of
+% the validation.
 %
 % -----------------------------------------------------------------------
 %                               EXAMPLES
 % -----------------------------------------------------------------------
-% sites = 1;
+% sites = 500;
 % time = (-4*pi():0.001:4*pi())';
 % % all observations are the same for each site.
 % Observations = 1000.*sin(time);
@@ -72,10 +72,25 @@
 % % remove negative values and then the obs look sort of like irradiance
 % Predictions(Predictions<0)=NaN;
 % Observations(Observations<0)=NaN;
-%
+% 
 % % validate using the four class system
 % validation_struct = FourClassValidation(Observations,Predictions,{'A','B','C'});
-
+% figure(1)
+% plot(validation_struct.MBD)
+% hold on
+% plot(validation_struct.RMSD)
+% plot(validation_struct.MAD)
+% plot(validation_struct.SD)
+% hold off
+% legend('MBD','RMSD','MAD','SD')
+% figure(2)
+% plot(validation_struct.R2)
+% hold on
+% plot(validation_struct.SBF)
+% plot(validation_struct.LCE)
+% plot(validation_struct.NSE)
+% hold off
+% legend('R2','SBF','LSE','NSE')
 
 function validation_struct = FourClassValidation(Observations,Predictions,class_selection)
 %% preliminary checks and preprocessing
@@ -159,10 +174,6 @@ for i = 1:size(Predictions,2)
     % established and do not need further references.
     
     if max(strcmpi(class_selection,'A')==1)
-        
-        if i == 327
-            pause(0.1)
-        end
         
         %-------------------------------------------------------------------------
         % A.1  Mean bias difference (MBD)
