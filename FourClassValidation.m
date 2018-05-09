@@ -50,12 +50,31 @@
 %
 % -----------------------------------------------------------------------
 %                               OUTPUTS
-%  -----------------------------------------------------------------------
+% -----------------------------------------------------------------------
 % The output is a struct containing the results, depending on the selected
 % class_selection. Within each struct contains the respective results.
 % For example, validation_struct.MBD contains the mean bias difference of the
 % validation.
-
+%
+% -----------------------------------------------------------------------
+%                               EXAMPLES
+% -----------------------------------------------------------------------
+% sites = 1;
+% time = (-4*pi():0.001:4*pi())'; 
+% % all observations are the same for each site.
+% Observations = 1000.*sin(time);
+% Observations = repmat(Observations,[1,sites]);
+% Predictions = zeros(size(Observations));
+% % create random noise about the observations.
+% for i = 1:sites
+%     Predictions(:,i) = 1000.*sin(time) + 500.*rand().*cos(time) - 500.*rand().*sin(time).^2 + 500.*rand().*sin(time).^2;
+% end
+% % remove negative values and then the obs look sort of like irradiance
+% Predictions(Predictions<0)=NaN;
+% Observations(Observations<0)=NaN;
+% 
+% % validate using the four class system
+% validation_struct = FourClassValidation(Observations,Predictions,{'A','B'});
 
 
 function validation_struct = FourClassValidation(Observations,Predictions,class_selection)
@@ -102,6 +121,9 @@ for i = 1:length(class_selection)
         case 'D'
     end
 end
+validation_struct.Om=zeros(1,size(Observations,2)).*NaN;
+validation_struct.Pm=zeros(1,size(Observations,2)).*NaN;
+validation_struct.N=zeros(1,size(Observations,2)).*NaN;
 
 % loop through each time series, assuming each column is a unique site to
 % validate.
@@ -118,13 +140,13 @@ for i = 1:size(Predictions,2)
     P = P(not_nan_inds);
     
     % define common usages
-    Om = mean(O);
+    Om = mean(O);SE 
     Pm = mean(P);
     N = length(O);
     
-    validation_struct.Om = Om;
-    validation_struct.Pm = Pm;
-    validation_struct.N = N;
+    validation_struct.Om(1,i) = Om;
+    validation_struct.Pm(1,i) = Pm;
+    validation_struct.N(1,i) = N;
     
     %% Class A - indicators of dispersion
     % These are the indicators that the majority of readers should be most
@@ -196,7 +218,7 @@ for i = 1:size(Predictions,2)
     if max(strcmpi(class_selection,'B')==1)
         %-------------------------------------------------------------------------
         % B.1 Nash-Sutcliffe's efficiency (NSE)
-        validation_struct.NSE(1,i) = 1 - sum(P-O).^2 ./ sum(O-Om).^2;
+        validation_struct.NSE(1,i) = 1 - sum((P-O).^2) ./ sum((O-Om).^2);
         %-------------------------------------------------------------------------
         % B.2 Willmotts's index of agreement (WIA)
         validation_struct.WIA(1,i) = 1 - sum(P-O).^2 ./ sum(abs(P-Om) + abs(O-Om)).^2;
